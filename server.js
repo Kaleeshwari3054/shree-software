@@ -80,6 +80,7 @@
 const express = require("express");
 const Razorpay = require("razorpay");
 const cors = require("cors");
+const PORT = process.env.PORT || 5000;
 require("dotenv").config();
 
 const app = express();
