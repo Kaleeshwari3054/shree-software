@@ -75,33 +75,45 @@
 // });
 
 
-
-
 const express = require("express");
 const Razorpay = require("razorpay");
 const cors = require("cors");
-const PORT = process.env.PORT || 5000;
 require("dotenv").config();
 
 const app = express();
+
+/* ================= MIDDLEWARE ================= */
 app.use(cors());
 app.use(express.json());
 
+/* ================= ENV CHECK ================= */
 console.log("KEY_ID:", process.env.KEY_ID);
 console.log("KEY_SECRET:", process.env.KEY_SECRET ? "LOADED" : "MISSING");
 
+/* ================= RAZORPAY ================= */
 const razorpay = new Razorpay({
   key_id: process.env.KEY_ID,
   key_secret: process.env.KEY_SECRET,
 });
 
-// ✅ Create Order API
+/* ================= ROUTES ================= */
+
+// Health check (VERY IMPORTANT for Render)
+app.get("/", (req, res) => {
+  res.send("Backend is live 🚀");
+});
+
+// Create Razorpay Order
 app.post("/create-order", async (req, res) => {
   try {
     const { amount } = req.body; // amount in rupees
 
+    if (!amount) {
+      return res.status(400).json({ message: "Amount is required" });
+    }
+
     const order = await razorpay.orders.create({
-      amount: Math.round(amount * 100), // convert to paise
+      amount: Math.round(amount * 100), // rupees → paise
       currency: "INR",
       receipt: "receipt_" + Date.now(),
     });
@@ -112,10 +124,13 @@ app.post("/create-order", async (req, res) => {
 
     res.status(500).json({
       message: "Order creation failed",
-      razorpayError: error?.error,
+      error: error?.error || error.message,
     });
   }
 });
+
+/* ================= SERVER ================= */
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Backend running on port ${PORT}`);
